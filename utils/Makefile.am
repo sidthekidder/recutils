@@ -79,6 +79,11 @@ rec2csv_SOURCES = $(COMMONSRC) \
 rec2csv_LDADD = $(COMMONLIBS) \
                 $(top_builddir)/libcsv/libcsv.la
 
+rec2json_SOURCES = $(COMMONSRC) \
+                  rec2json.c
+rec2json_LDADD = $(COMMONLIBS) \
+                $(top_builddir)/libcsv/libcsv.la
+
 mdb2rec_SOURCES = $(COMMONSRC) \
                   mdb2rec.c
 mdb2rec_CFLAGS = $(GLIB_CFLAGS)
