@@ -176,35 +176,63 @@ rec2csv_generate_json (rec_rset_t rset,
   char *tmp;
   size_t i;
 
-  putc ('{', stdout);
-  for (i = 0; i < rec_fex_size (fex); i++)
+  
+  iter = rec_mset_iterator (rec_rset_mset (rset));
+  while (rec_mset_iterator_next (&iter, MSET_RECORD, (const void**) &record, NULL))
     {
-      if (i != 0)
+	
+      putc ('{', stdout);
+      for (i = 0; i < rec_fex_size (fex); i++)
         {
-          putc (rec2csv_delim, stdout);
+          fex_elem = rec_fex_get (fex, i);
+          field_name = xstrdup (rec_fex_elem_field_name (fex_elem));
+	
+	  field = rec_record_get_field_by_name (record,
+		                                rec_fex_elem_field_name (fex_elem),
+		                                rec_fex_elem_min (fex_elem));    
+
+	  /*	If the field has no value then skip it	*/
+
+	  if (!field)
+	    {
+              continue;
+	    }
+
+          if (i != 0)
+            {
+              putc (rec2csv_delim, stdout);
+            }
+	
+          if (field_name[strlen(field_name)-1] == ':')
+	    {
+	      field_name[strlen(field_name)-1] = '\0';
+	    }
+
+          if (asprintf (&tmp, "%s", field_name) == -1)
+            recutl_out_of_memory ();
+	
+          csv_fwrite (stdout, tmp, strlen(tmp));
+
+          putc (':', stdout);  
+          
+          if (field)
+            {
+              csv_fwrite (stdout,
+                          rec_field_value (field),
+                          strlen (rec_field_value (field)));
+            }
+
+	  free (field_name);
+          free (tmp);
         }
 
-      fex_elem = rec_fex_get (fex, i);
-      field_name = xstrdup (rec_fex_elem_field_name (fex_elem));
+      putc ('}', stdout);
+      putc (rec2csv_delim, stdout);
 
-      if (field_name[strlen(field_name)-1] == ':')
-        {
-          field_name[strlen(field_name)-1] = '\0';
-        }
-
-      if (asprintf (&tmp, "%s", field_name) == -1)
-	{
-	      recutl_out_of_memory ();
-	}
- 
-      csv_fwrite (stdout, tmp, strlen(tmp));
-      free (field_name);
-      free (tmp);
+      putc ('\n', stdout);
     }
-	
-  putc ('}', stdout);
-  putc ('\n', stdout);
-	
+
+  rec_mset_iterator_free (&iter);		
 }
 
 static rec_fex_t
